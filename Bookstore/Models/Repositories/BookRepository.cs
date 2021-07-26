@@ -11,14 +11,15 @@ namespace Bookstore.Models.Repositories
         {
             books = new List<Book>
             {
-                new Book{Id=1, Title="ASP.NET CORE", Description="Core 3.1"},
-                new Book{Id=2, Title="Angular Framework", Description="Version 8"},
-                new Book{Id=3, Title="Bootstrap Development", Description="Version 4.5.0"}
+                new Book{Id=1, Title="ASP.NET CORE", Description="Core 3.1", Author = new Author() },
+                new Book{Id=2, Title="Angular Framework", Description="Version 8", Author=new Author() },
+                new Book{Id=3, Title="Bootstrap Development", Description="Version 4.5.0", Author=new Author() }
             };
         }
 
         public void Add(Book book)
         {
+            book.Id = books.Max(x => x.Id) + 1;
             books.Add(book);
         }
 
