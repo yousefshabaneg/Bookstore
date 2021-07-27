@@ -1,8 +1,10 @@
 ﻿using Bookstore.Models;
 using Bookstore.Models.Repositories;
 using Bookstore.ViewModels;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Bookstore.Controllers
@@ -11,11 +13,13 @@ namespace Bookstore.Controllers
     {
         private readonly IBookstoreRepository<Book> bookRepository;
         private readonly IBookstoreRepository<Author> authorRepository;
+        private readonly IWebHostEnvironment hosting;
 
-        public BookController(IBookstoreRepository<Book> bookRepository, IBookstoreRepository<Author> authorRepository)
+        public BookController(IBookstoreRepository<Book> bookRepository, IBookstoreRepository<Author> authorRepository, IWebHostEnvironment hosting)
         {
             this.bookRepository = bookRepository;
             this.authorRepository = authorRepository;
+            this.hosting = hosting;
         }
 
         // GET: BookController
@@ -50,32 +54,49 @@ namespace Bookstore.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Create(BookAuthorViewModel model)
         {
-            try
+            if (ModelState.IsValid)
             {
-                if (model.AuthorId == -1)
+                try
                 {
-                    ViewBag.Message = "Please Select an author.";
-                    model.Authors = FillSelectList();
-                    return View(model);
+                    string fileName = string.Empty;
+                    if (model.File != null)
+                    {
+                        var uploads = Path.Combine(hosting.WebRootPath, "uploads");
+                        fileName = model.File.FileName;
+                        var fullPath = Path.Combine(uploads, fileName);
+                        model.File.CopyTo(new FileStream(fullPath, FileMode.Create));
+                    }
+
+                    if (model.AuthorId == -1)
+                    {
+                        ViewBag.Message = "Please Select an author.";
+                        model.Authors = FillSelectList();
+                        return View(model);
+                    }
+
+                    var author = authorRepository.Find(model.AuthorId);
+
+                    Book book = new Book
+                    {
+                        Id = model.BookID,
+                        Title = model.Title,
+                        Description = model.Description,
+                        Author = author,
+                        ImageUrl = fileName
+                    };
+
+                    bookRepository.Add(book);
+                    return RedirectToAction(nameof(Index));
+                }
+                catch
+                {
+                    return View();
                 }
 
-                var author = authorRepository.Find(model.AuthorId);
-
-                Book book = new Book
-                {
-                    Id = model.BookID,
-                    Title = model.Title,
-                    Description = model.Description,
-                    Author = author
-                };
-
-                bookRepository.Add(book);
-                return RedirectToAction(nameof(Index));
             }
-            catch
-            {
-                return View();
-            }
+            model.Authors = FillSelectList();
+            ModelState.AddModelError("", "Please fill all required fields.");
+            return View(model);
         }
 
         // GET: BookController/Edit/5
@@ -93,7 +114,8 @@ namespace Bookstore.Controllers
                 Title = book.Title,
                 Description = book.Description,
                 AuthorId = book.Author.Id,
-                Authors = authorRepository.List().ToList()
+                Authors = authorRepository.List().ToList(),
+                ImageUrl = book.ImageUrl
             };
 
             return View(viewModel);
@@ -106,13 +128,33 @@ namespace Bookstore.Controllers
         {
             try
             {
+                string fileName = string.Empty;
+                if (viewModel.File != null)
+                {
+                    var uploads = Path.Combine(hosting.WebRootPath, "uploads");
+                    fileName = viewModel.File.FileName;
+                    var fullPath = Path.Combine(uploads, fileName);
+
+                    //Get the old Image
+                    string oldFileName = bookRepository.Find(viewModel.BookID).ImageUrl;
+                    string fullOldPath = Path.Combine(uploads, oldFileName);
+
+                    if (fullOldPath != fullPath)
+                    {
+                        System.IO.File.Delete(fullOldPath);
+                        //Save the new Image
+                        viewModel.File.CopyTo(new FileStream(fullPath, FileMode.Create));
+                    }
+
+                }
                 var author = authorRepository.Find(viewModel.AuthorId);
 
                 Book book = new Book
                 {
                     Title = viewModel.Title,
                     Description = viewModel.Description,
-                    Author = author
+                    Author = author,
+                    ImageUrl = fileName
                 };
 
                 bookRepository.Update(viewModel.BookID, book);

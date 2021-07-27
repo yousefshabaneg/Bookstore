@@ -1,4 +1,6 @@
-﻿namespace Bookstore.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Bookstore.Models
 {
     public class Book
     {
@@ -6,5 +8,8 @@
         public string Title { get; set; }
         public string Description { get; set; }
         public Author Author { get; set; }
+
+        [Display(Name = "Image")]
+        public string ImageUrl { get; set; }
     }
 }
