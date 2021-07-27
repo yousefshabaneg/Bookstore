@@ -2,7 +2,9 @@
 using Bookstore.Models.Repositories;
 using Bookstore.ViewModels;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -58,14 +60,8 @@ namespace Bookstore.Controllers
             {
                 try
                 {
-                    string fileName = string.Empty;
-                    if (model.File != null)
-                    {
-                        var uploads = Path.Combine(hosting.WebRootPath, "uploads");
-                        fileName = model.File.FileName;
-                        var fullPath = Path.Combine(uploads, fileName);
-                        model.File.CopyTo(new FileStream(fullPath, FileMode.Create));
-                    }
+                    string fileName = UploadFile(model.File) ?? string.Empty;
+
 
                     if (model.AuthorId == -1)
                     {
@@ -128,25 +124,8 @@ namespace Bookstore.Controllers
         {
             try
             {
-                string fileName = string.Empty;
-                if (viewModel.File != null)
-                {
-                    var uploads = Path.Combine(hosting.WebRootPath, "uploads");
-                    fileName = viewModel.File.FileName;
-                    var fullPath = Path.Combine(uploads, fileName);
+                string fileName = UploadFile(viewModel.File, viewModel.ImageUrl);
 
-                    //Get the old Image
-                    string oldFileName = viewModel.ImageUrl;
-                    string fullOldPath = Path.Combine(uploads, oldFileName);
-
-                    if (fullOldPath != fullPath)
-                    {
-                        System.IO.File.Delete(fullOldPath);
-                        //Save the new Image
-                        viewModel.File.CopyTo(new FileStream(fullPath, FileMode.Create));
-                    }
-
-                }
                 var author = authorRepository.Find(viewModel.AuthorId);
 
                 Book book = new Book
@@ -161,7 +140,7 @@ namespace Bookstore.Controllers
                 bookRepository.Update(viewModel.BookID, book);
                 return RedirectToAction(nameof(Index));
             }
-            catch
+            catch (Exception ex)
             {
                 return View();
             }
@@ -195,6 +174,42 @@ namespace Bookstore.Controllers
             var authors = authorRepository.List().ToList();
             authors.Insert(0, new Author { Id = -1, FullName = "--- Please select an author ---" });
             return authors;
+        }
+
+        string UploadFile(IFormFile file)
+        {
+            if (file != null)
+            {
+                var uploads = Path.Combine(hosting.WebRootPath, "uploads");
+                var fullPath = Path.Combine(uploads, file.FileName);
+                file.CopyTo(new FileStream(fullPath, FileMode.Create));
+                return file.FileName;
+            }
+
+            return null;
+        }
+
+        string UploadFile(IFormFile file, string imageUrl)
+        {
+            if (file != null)
+            {
+                var uploads = Path.Combine(hosting.WebRootPath, "uploads");
+                var newPath = Path.Combine(uploads, file.FileName);
+
+                //Get the old Image
+                string oldPath = Path.Combine(uploads, imageUrl);
+
+                if (oldPath != newPath)
+                {
+                    System.IO.File.Delete(oldPath);
+                    //Save the new Image
+                    file.CopyTo(new FileStream(newPath, FileMode.Create));
+                }
+
+                return file.FileName;
+            }
+
+            return imageUrl;
         }
     }
 }
