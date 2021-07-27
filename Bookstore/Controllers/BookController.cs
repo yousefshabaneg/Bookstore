@@ -136,7 +136,7 @@ namespace Bookstore.Controllers
                     var fullPath = Path.Combine(uploads, fileName);
 
                     //Get the old Image
-                    string oldFileName = bookRepository.Find(viewModel.BookID).ImageUrl;
+                    string oldFileName = viewModel.ImageUrl;
                     string fullOldPath = Path.Combine(uploads, oldFileName);
 
                     if (fullOldPath != fullPath)
@@ -151,6 +151,7 @@ namespace Bookstore.Controllers
 
                 Book book = new Book
                 {
+                    Id = viewModel.BookID,
                     Title = viewModel.Title,
                     Description = viewModel.Description,
                     Author = author,
