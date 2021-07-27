@@ -22,8 +22,8 @@ namespace Bookstore
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews().AddRazorRuntimeCompilation();
-            services.AddSingleton<IBookstoreRepository<Author>, AuthorRepository>();
-            services.AddSingleton<IBookstoreRepository<Book>, BookRepository>();
+            services.AddScoped<IBookstoreRepository<Author>, AuthorDbRepository>();
+            services.AddScoped<IBookstoreRepository<Book>, BookDbRepository>();
 
             services.AddDbContext<BookstoreDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("SqlCon")));
         }
