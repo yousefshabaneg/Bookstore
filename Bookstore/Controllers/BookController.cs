@@ -169,6 +169,12 @@ namespace Bookstore.Controllers
             }
         }
 
+        public ActionResult Search(string term)
+        {
+            var result = bookRepository.Search(term);
+            return View("Index", result);
+        }
+
         List<Author> FillSelectList()
         {
             var authors = authorRepository.List().ToList();
