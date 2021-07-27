@@ -2,6 +2,7 @@ using Bookstore.Models;
 using Bookstore.Models.Repositories;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -23,6 +24,8 @@ namespace Bookstore
             services.AddControllersWithViews().AddRazorRuntimeCompilation();
             services.AddSingleton<IBookstoreRepository<Author>, AuthorRepository>();
             services.AddSingleton<IBookstoreRepository<Book>, BookRepository>();
+
+            services.AddDbContext<BookstoreDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("SqlCon")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
